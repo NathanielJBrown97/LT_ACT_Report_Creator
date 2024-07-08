@@ -155,7 +155,7 @@ def process_student_csv(input_file, output_folder):
 
     elements.append(Spacer(1, 180))  
     elements.append(styled_box)
-    elements.append(Spacer(1, 48))
+    elements.append(Spacer(1, 24))
 
 
     composite_score = summary_df.at[0, 'Composite Score']
