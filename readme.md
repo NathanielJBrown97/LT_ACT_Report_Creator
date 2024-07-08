@@ -2,6 +2,8 @@
 # ACT PDF Report Creator
 
 ## Instructions
+Place the main.exe located wtihin 'dist' folder into a folder of your choosing. Create an 'images', 'SensitiveStudentData', and 'StudentReports' folder within this location. These should be on the same level as the executable. Ensure the logo and banner are within the images folder. Ensure all CSVs are located within SensitiveStudentData. From here you can run the executable and all PDFs will be deposited within the StudentReport folder.
+
 
 ### Folder Structure
 Ensure the `main` executable is within a folder at the same level as two other folders named `SensitiveStudentData` and `StudentReports`. **Case sensitivity is important**. Your folder structure should look like this:
