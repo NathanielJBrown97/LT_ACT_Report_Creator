@@ -58,7 +58,7 @@ def load_summary_csv(file_path):
     current_section = None
     current_status = None
 
-    for row in data[1:-4]:
+    for row in data[1:-5]: 
         if row[1] == '--' and row[2] == '--':
             current_section = row[0].replace(' correct', '').replace(' wrong', '').strip().lower()
             sections.setdefault(current_section, {"correct": [], "wrong": []})
@@ -70,7 +70,7 @@ def load_summary_csv(file_path):
                 "Total": int(row[2])
             })
 
-    final_rows = data[-4:]
+    final_rows = data[-5:]
     student_summary["English_Right"] = int(final_rows[0][0])
     student_summary["English_Total"] = int(final_rows[0][1])
     student_summary["Math_Right"] = int(final_rows[1][0])
@@ -80,7 +80,16 @@ def load_summary_csv(file_path):
     student_summary["Science_Right"] = int(final_rows[3][0])
     student_summary["Science_Total"] = int(final_rows[3][1])
 
+    percentiles = {
+        "English Percentile": final_rows[4][0],
+        "Math Percentile": final_rows[4][1],
+        "Reading Percentile": final_rows[4][2],
+        "Science Percentile": final_rows[4][3],
+        "Composite Percentile": final_rows[4][4]
+    }
+
     summary_df = pd.DataFrame([student_summary])
+    summary_df = summary_df.assign(**percentiles)
 
     section_dfs = {}
     for section, data in sections.items():
@@ -146,6 +155,45 @@ def process_student_csv(input_file, output_folder):
 
     elements.append(Spacer(1, 180))  
     elements.append(styled_box)
+    elements.append(Spacer(1, 48))
+
+
+    composite_score = summary_df.at[0, 'Composite Score']
+
+    composite_score_table_data = [
+        ['Composite Score:', composite_score]
+    ]
+    composite_score_table = Table(composite_score_table_data, colWidths=[3*inch, 1*inch])
+    composite_score_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#b29600')),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0e1027')),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
+    composite_score_box = Table([[composite_score_table]], colWidths=[4*inch])
+    composite_score_box.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.beige),
+        ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#b29600')),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#0e1027')),
+    ]))
+
+    elements.append(Spacer(1, 24))
+    elements.append(composite_score_box)
     elements.append(Spacer(1, 24))
     elements.append(PageBreak())
 
@@ -189,7 +237,11 @@ def process_student_csv(input_file, output_folder):
                 ['Section', 'Correct', 'Score'],
                 ['English', f'{english_score}/{total_english_questions}', english_act_score],
                 ['Math', f'{math_score}/{total_math_questions}', math_act_score]
-            ]
+            ],
+            {
+                'English Percentile': summary_df.at[0, 'English Percentile'],
+                'Math Percentile': summary_df.at[0, 'Math Percentile']
+            }
         )
 
         add_section_to_pdf(
@@ -205,7 +257,11 @@ def process_student_csv(input_file, output_folder):
                 ['Section', 'Correct', 'Score'],
                 ['Reading', f'{reading_score}/{total_reading_questions}', reading_act_score],
                 ['Science', f'{science_score}/{total_science_questions}', science_act_score]
-            ]
+            ],
+            {
+                'Reading Percentile': summary_df.at[0, 'Reading Percentile'],
+                'Science Percentile': summary_df.at[0, 'Science Percentile']
+            }
         )
         elements.append(PageBreak())
         df = df.dropna(subset=['Topic Tested'])
@@ -231,7 +287,6 @@ def process_student_csv(input_file, output_folder):
 
     except KeyError as e:
         print(f"KeyError: {e}")
-
 
 def add_page_style(canvas, doc):
     page_num = canvas.getPageNumber()
@@ -308,7 +363,7 @@ def generate_bar_chart(sections, percentages, scores, file_name):
     plt.savefig(file_name, bbox_inches='tight')
     plt.close()
 
-def add_section_to_pdf(elements, header, text, chart_file_path, data):
+def add_section_to_pdf(elements, header, text, chart_file_path, data, percentiles):
     header_style = ParagraphStyle('Header1', fontName='Helvetica-Bold', fontSize=18, textColor=colors.HexColor('#0e1027'))
     paragraph_style = ParagraphStyle('BodyText', fontName='Helvetica', fontSize=12, textColor=colors.black)
 
@@ -321,7 +376,17 @@ def add_section_to_pdf(elements, header, text, chart_file_path, data):
 
     im = Image(chart_file_path)
     im.drawHeight = 2.5 * inch
-    im.drawWidth = 3.5 * inch  
+    im.drawWidth = 3.5 * inch
+
+    data[0].append('Percentile')  # Add Percentile column header
+
+    for row in data[1:]:
+        section_name = row[0]
+        percentile_key = f"{section_name} Percentile"
+        if percentile_key in percentiles:
+            row.append(percentiles[percentile_key])
+        else:
+            row.append("N/A")
 
     table = Table(data)
     table.setStyle(TableStyle([
@@ -334,6 +399,7 @@ def add_section_to_pdf(elements, header, text, chart_file_path, data):
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
+
     combined = Table(
         [[im, table]],
         colWidths=[3.5 * inch, 3.5 * inch] 
@@ -341,8 +407,8 @@ def add_section_to_pdf(elements, header, text, chart_file_path, data):
     combined.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('LEFTPADDING', (1, 0), (1, -1), -25),  
-        ('RIGHTPADDING', (0, 0), (0, -1), -25),  
+        ('LEFTPADDING', (1, 0), (1, -1), -20),  
+        ('RIGHTPADDING', (0, 0), (0, -1), -20),  
         ('TOPPADDING', (1, 0), (1, -1), 14.5), 
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),  
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f4f4f4')),
