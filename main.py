@@ -557,7 +557,7 @@ def add_detailed_results_section(elements, section_name, df, act_score, missed_t
     elements.append(Spacer(1, 12))
 
     for chunk in data_chunks:
-        table_data = [[Paragraph('<b>#</b>', header_style), Paragraph('<b>K</b>', header_style), Paragraph('<b>S</b>', header_style), Paragraph('<b>Topics</b>', header_style)]]
+        table_data = [[Paragraph('<b>#</b>', header_style), Paragraph('<b>Key</b>', header_style), Paragraph('<b>You</b>', header_style), Paragraph('<b>Topics</b>', header_style)]]
         for row in chunk:
             question_number, correct_answer, student_answer, topics = row
             if correct_answer != student_answer:
